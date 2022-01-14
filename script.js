@@ -1,5 +1,7 @@
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
+const image = new Image();
+image.src = './personagens/react.png';
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -21,10 +23,11 @@ class Player {
   }
 
   draw() {
-    context.fillStyle = 'red';
+    context.fillStyle = 'white';
     context.fillRect(
       this.position.x, this.position.y, this.width, this.height
       );
+    context.drawImage(image, this.position.x, this.position.y - 16, 50, 50);
   }
 
   update() {
@@ -120,7 +123,7 @@ window.addEventListener('keydown', ({ keyCode }) => {
       break;
     case 87:
       // up
-      player.velocity.y -= 20; 
+      player.velocity.y -= 30;
       break;
   }
 });
@@ -137,10 +140,6 @@ window.addEventListener('keyup', ({ keyCode }) => {
       break;
     case 83:
       // down
-      break;
-    case 87:
-      // up
-      player.velocity.y -= 20; 
       break;
   }
 });
