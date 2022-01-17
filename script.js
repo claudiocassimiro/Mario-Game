@@ -1,10 +1,11 @@
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
-const image = new Image();
-image.src = './personagens/react.png';
+const plataformImage = './personagens/platform.png';
+const backgroundImage = './personagens/background.png';
+const hillImage = './personagens/hills.png';
 
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width = 1024;
+canvas.height = 576;
 
 const gravity = 1.5;
 
@@ -23,11 +24,10 @@ class Player {
   }
 
   draw() {
-    context.fillStyle = 'white';
+    context.fillStyle = 'red';
     context.fillRect(
       this.position.x, this.position.y, this.width, this.height
       );
-    context.drawImage(image, this.position.x, this.position.y - 16, 50, 50);
   }
 
   update() {
@@ -38,35 +38,86 @@ class Player {
     // esse if, ta criando a gravidade do game
     if (this.position.y + this.height + this.velocity.y <= canvas.height) {
       this.velocity.y += gravity;
-    } else {
-      this.velocity.y = 0;
     }
   }
 }
 
 class Plataform {
-  constructor() {
+  constructor({ x, y, image }) {
     this.position = {
-      x: 200,
-      y: 100,
+      x,
+      y,
     }
 
-    this.width = 200;
-    this.height = 20;
+    this.image = image;
+    this.width = image.width;
+    this.height = image.height;
+
   }
 
   draw() {
-    context.fillStyle = 'green';
-    context.fillRect(
-      this.position.x, this.position.y, this.width, this.height
-      );
+    context.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
   }
 }
 
-const player = new Player();
-const plataform = new Plataform();
+class GenericObject {
+  constructor({ x, y, image }) {
+    this.position = {
+      x,
+      y,
+    }
 
-const keys = {
+    this.image = image;
+    this.width = image.width;
+    this.height = image.height;
+  }
+
+  draw() {
+    context.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
+  }
+}
+
+function createImage(imageSrc) {
+  const image = new Image();
+  image.src = imageSrc;
+  return image;
+}
+
+let plataform = createImage(plataformImage);
+
+let player = new Player();
+let plataforms = [
+  new Plataform({
+    x: -1,
+    y: 470,
+    image: plataform,
+  }),
+  new Plataform({
+    x: plataform.width -3,
+    y:470,
+    image: plataform,
+  }),
+  new Plataform({
+    x: plataform.width * 2 + 200,
+    y: 470,
+    image: plataform,
+  }),
+];
+
+let genericObjects = [
+  new GenericObject({
+    x: -1,
+    y: -1,
+    image: createImage(backgroundImage),
+  }),
+  new GenericObject({
+    x: -1,
+    y: -1,
+    image: createImage(hillImage),
+  }),
+]
+
+let keys = {
   right: {
     pressed: false,
   },
@@ -75,11 +126,68 @@ const keys = {
   }
 }
 
+let scrollOffSet = 0;
+
+function init() {
+  plataform = createImage(plataformImage);
+
+  player = new Player();
+  plataforms = [
+    new Plataform({
+      x: -1,
+      y: 470,
+      image: plataform,
+    }),
+    new Plataform({
+      x: plataform.width -3,
+      y:470,
+      image: plataform,
+    }),
+    new Plataform({
+      x: plataform.width * 2 + 200,
+      y: 470,
+      image: plataform,
+    }),
+  ];
+
+  genericObjects = [
+    new GenericObject({
+      x: -1,
+      y: -1,
+      image: createImage(backgroundImage),
+    }),
+    new GenericObject({
+      x: -1,
+      y: -1,
+      image: createImage(hillImage),
+    }),
+  ]
+
+  keys = {
+    right: {
+      pressed: false,
+    },
+    left: {
+      pressed: false,
+    }
+  }
+
+  scrollOffSet = 0;
+}
+
 function animate() {
   requestAnimationFrame(animate);
-  context.clearRect(0, 0, canvas.width = innerWidth, canvas.height = innerHeight);
+  context.fillStyle = '#638';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  genericObjects.forEach((genericObject) => {
+    genericObject.draw();
+  });
+
+  plataforms.forEach((plataform) => {
+    plataform.draw();
+  })
   player.update();
-  plataform.draw();
 
   // moviment detection
   if (keys.right.pressed && player.position.x < 400) {
@@ -90,19 +198,46 @@ function animate() {
     player.velocity.x = 0;
 
     if (keys.right.pressed) {
-      plataform.position.x -= 5;
+      scrollOffSet += 5;
+      plataforms.forEach((plataform) => {
+        plataform.position.x -= 5;
+      });
+
+      genericObjects.forEach((genericObject) => {
+        genericObject.position.x -= 3;
+      });
     } else if (keys.left.pressed) {
-      plataform.position.x += 5;
+      scrollOffSet -= 5;
+      plataforms.forEach((plataform) => {
+        plataform.position.x += 5;
+      });
+
+      genericObjects.forEach((genericObject) => {
+        genericObject.position.x += 3;
+      });
     }
   }
 
   // plataform collision dectection
-  if (player.position.y + player.height <= plataform.position.y
-    && player.position.y + player.height + player.velocity.y
-    >= plataform.position.y && player.position.x + player.width
-    >= plataform.position.x && player.position.x
-    <= plataform.position.x + plataform.width) {
-    player.velocity.y = 0;
+  plataforms.forEach((plataform) => {
+    if (player.position.y + player.height <= plataform.position.y
+      && player.position.y + player.height + player.velocity.y
+      >= plataform.position.y && player.position.x + player.width
+      >= plataform.position.x && player.position.x
+      <= plataform.position.x + plataform.width) {
+      player.velocity.y = 0;
+    }
+  });
+
+  // win condition
+  if (scrollOffSet > 2000) {
+
+  }
+
+  // lose condition
+  if (player.position.y > canvas.height) {
+    alert('You lose y-y');
+    init();
   }
 }
 
